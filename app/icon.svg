@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="112" fill="#4A5D52"/>
+  <rect x="56" y="56" width="400" height="400" rx="80" fill="none" stroke="#B5C8BC" stroke-width="6" opacity="0.5"/>
+  <text x="50%" y="52%" text-anchor="middle" dominant-baseline="middle"
+        font-family="'Noto Serif SC', Georgia, 'Songti SC', serif"
+        font-size="250" font-weight="700" fill="#FFFFFF" letter-spacing="4">留</text>
+</svg>

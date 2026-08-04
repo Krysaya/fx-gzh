@@ -1,0 +1,66 @@
+# gzh 自动排版：把 gzh/ 下的新 .md 按「留白禅意风」排成公众号草稿箱 HTML
+#
+# 触发方式：
+#   1. 手动：仓库 Actions 页面点 Run workflow（推荐，配合云函数取件）
+#   2. 自动：push 到 gzh/** 下新增/修改的 .md（排除 gzh/排版/ 与清单，避免死循环）
+#
+# 产物：
+#   gzh/排版/{名}_排版_留白禅意风(zen-whitespace).html     干净正文片段（草稿箱粘贴用）
+#   gzh/排版/{名}_排版_留白禅意风(zen-whitespace)_预览.html 带「复制」按钮预览页
+#   gzh/排版/产物清单.json                                  最新产物清单（云函数定位用）
+#   gzh/.processed.json                                     已处理记录（按内容 hash 判新增/改动）
+#
+# 作者署名：可在仓库设置 Secrets 配置 GZH_AUTHOR / GZH_AUTHOR_BIO，
+#           或直接在 gzh/config.json 里写 {"author":"...","bio":"..."}。
+
+name: gzh-format
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'gzh/**'
+      - '!gzh/排版/**'
+      - '!gzh/.processed.json'
+      - '!gzh/config.json'
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 运行排版器（留白禅意风）
+        env:
+          GZH_AUTHOR: ${{ secrets.GZH_AUTHOR }}
+          GZH_AUTHOR_BIO: ${{ secrets.GZH_AUTHOR_BIO }}
+        run: python3 scripts/gzh_format.py
+
+      - name: 提交排版产物回仓库
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add gzh/排版/ gzh/.processed.json
+          if git diff --cached --quiet; then
+            echo "没有新增/变化的排版产物，跳过提交"
+          else
+            git commit -m "chore: gzh 自动排版（留白禅意风）"
+            git push
+          fi
+
+      - name: 上传产物（artifact 兜底）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gzh-排版产物
+          path: gzh/排版/
+          if-no-files-found: ignore

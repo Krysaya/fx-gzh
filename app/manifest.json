@@ -1,0 +1,19 @@
+{
+  "name": "留白禅意风 · 公众号排版",
+  "short_name": "禅意排版",
+  "description": "粘贴 Markdown，一键生成留白禅意风公众号排版，复制粘贴进草稿箱。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F8F7",
+  "theme_color": "#4A5D52",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

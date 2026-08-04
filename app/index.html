@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#4A5D52">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="禅意排版">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>留白禅意风 · 公众号排版</title>
+<style>
+  :root{
+    --ink:#525252; --ink-strong:#2B2B2B; --green:#4A5D52;
+    --line:#E8E8E8; --muted:#A3A3A3; --bg:#F7F8F7;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+    color:var(--ink); background:var(--bg);
+  }
+  header{
+    display:flex; align-items:center; flex-wrap:wrap; gap:10px;
+    padding:14px 20px; background:#fff; border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:10;
+  }
+  header .brand{font-family:'Noto Serif SC',Georgia,serif; font-size:16px; font-weight:700; color:var(--ink-strong); letter-spacing:.5px; margin-right:auto;}
+  header .brand small{font-weight:400; color:var(--muted); font-size:12px; letter-spacing:1px; margin-left:8px;}
+  header input{
+    border:1px solid var(--line); border-radius:6px; padding:7px 11px;
+    font-size:13px; color:var(--ink); outline:none; background:#FAFAF8;
+  }
+  header input:focus{border-color:var(--green);}
+  header input.author{width:110px;}
+  header input.bio{width:200px;}
+  button{
+    border:1px solid var(--line); background:#fff; color:var(--ink-strong);
+    border-radius:6px; padding:7px 14px; font-size:13px; cursor:pointer;
+    transition:.15s; letter-spacing:.5px;
+  }
+  button:hover{border-color:var(--green); color:var(--green);}
+  button.primary{background:var(--green); color:#fff; border-color:var(--green);}
+  button.primary:hover{background:#3d4f46; color:#fff;}
+  main{display:flex; height:calc(100% - 61px);}
+  .pane{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .pane + .pane{border-left:1px solid var(--line);}
+  .pane .label{
+    font-size:11px; letter-spacing:2px; text-transform:uppercase;
+    color:var(--muted); padding:10px 18px 6px;
+  }
+  textarea{
+    flex:1; width:100%; border:none; outline:none; resize:none;
+    padding:4px 18px 24px; font-size:14px; line-height:1.9; color:var(--ink);
+    background:#fff; font-family:inherit;
+  }
+  .preview-wrap{
+    flex:1; overflow:auto; background:var(--bg); padding:24px 0;
+  }
+  .preview-wrap .phone{
+    max-width:677px; margin:0 auto; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.06);
+  }
+  /* 预览内承载生成的 section，自带样式 */
+  .toast{
+    position:fixed; left:50%; bottom:32px; transform:translateX(-50%);
+    background:var(--ink-strong); color:#fff; padding:10px 20px; border-radius:8px;
+    font-size:13px; letter-spacing:.5px; opacity:0; pointer-events:none;
+    transition:opacity .25s; z-index:50;
+  }
+  .toast.show{opacity:1;}
+  @media(max-width:760px){
+    main{flex-direction:column; height:auto;}
+    .pane + .pane{border-left:none; border-top:1px solid var(--line);}
+    header .brand small{display:none;}
+    textarea{min-height:200px;}
+  }
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">留白禅意风<small>公众号一键排版</small></span>
+  <input class="author" id="author" placeholder="作者名" value="">
+  <input class="bio" id="bio" placeholder="一句简介" value="">
+  <button id="sample">载入示例</button>
+  <button id="clear">清空</button>
+  <button id="download">下载 HTML</button>
+  <button class="primary" id="copy">复制全部</button>
+</header>
+<main>
+  <section class="pane">
+    <div class="label">在此粘贴 Markdown 原文</div>
+    <textarea id="src" placeholder="支持：# 标题、## 章节、### 小标题、> 引用、!> [!NOTE] 提示、```代码```、![图](url)、| 表格 |、- 列表、**[加粗]**、==标签==、<u>下划线</u>、~~荧光笔~~、`行内代码`、--- 分割线、开头 > 引言 …"></textarea>
+  </section>
+  <section class="pane">
+    <div class="label">实时预览（留白禅意风）</div>
+    <div class="preview-wrap"><div class="phone" id="preview"></div></div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================================
+   留白禅意风排版器（纯前端，移植自 scripts/gzh_format.py）
+   组件模板 / 标点全角 / span leaf / 章节编号 / 关键词下划线 / 列表原编号
+   全部与 Python 版一致。
+   ========================================================================= */
+
+const CONTAINER_OPEN = '<section style="max-width:677px;margin:0 auto;background:#FFFFFF;font-family:-apple-system,BlinkMacSystemFont,\'PingFang SC\',\'Hiragino Sans GB\',\'Microsoft YaHei\',sans-serif;color:#525252;line-height:1.9;letter-spacing:0.3px;overflow-x:hidden;">';
+const CONTAINER_CLOSE = '</section>';
+
+const INTRO_TPL = '<section style="margin:32px 16px 48px;padding:40px 24px;border-top:1px solid #E8E8E8;border-bottom:1px solid #E8E8E8;text-align:center;">\n  <p style="font-family:\'Noto Serif SC\',Georgia,\'Times New Roman\',serif;font-size:19px;font-weight:600;color:#2B2B2B;margin:0 0 28px;line-height:1.85;letter-spacing:0.8px;">\n    {quote}\n  </p>\n  <p style="font-size:12px;color:#A3A3A3;margin:0;letter-spacing:1.5px;">\n    {author}\n  </p>\n</section>';
+
+const TOC_TPL = '<section style="padding:0 16px 48px;">\n  <p style="font-size:11px;color:#A3A3A3;margin:0 0 20px;letter-spacing:2px;text-transform:uppercase;"><span leaf="">本文脉络</span></p>\n  <section style="border-top:1px solid #E8E8E8;">\n    <section style="display:flex;">\n      {items}\n    </section>\n  </section>\n</section>';
+const TOC_ITEM = '<section style="flex:1;padding:18px 12px 18px 0;border-bottom:1px solid #E8E8E8;{border}">\n  <p style="font-size:11px;color:#4A5D52;font-weight:600;margin:0 0 6px;letter-spacing:1px;"><span leaf="">{num}</span></p>\n  <p style="font-size:13px;color:#2B2B2B;margin:0;font-weight:500;line-height:1.5;"><span leaf="">{title}</span></p>\n</section>';
+
+const DIVIDER = '<section style="padding:0 16px;">\n  <section style="height:1px;background:#E8E8E8;margin:64px 0 0;">\n    <span leaf=""><br></span>\n  </section>\n</section>';
+
+const CHAPTER_TPL = '<section style="margin-top:64px;margin-bottom:32px;padding:0 16px;">\n  <p style="font-size:10px;color:#4A5D52;font-weight:600;letter-spacing:4px;margin:0 0 10px;text-transform:uppercase;">\n    {num_label}\n  </p>\n  <h3 style="font-family:\'Noto Serif SC\',Georgia,\'Times New Roman\',serif;font-size:22px;font-weight:700;color:#2B2B2B;margin:0 0 16px;letter-spacing:0.5px;line-height:1.4;">\n    {title}\n  </h3>\n  <section style="width:40px;height:2px;background:#4A5D52;">\n    <span leaf=""><br></span>\n  </section>\n</section>';
+
+const PARA = '<p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;color:#525252;padding:0 16px;">{content}</p>';
+
+const BOLD_NORMAL = '<strong style="color:#2B2B2B;">{content}</strong>';
+const BOLD_ANCHOR = '<strong style="color:#4A5D52;">{content}</strong>';
+const LABEL_SPAN = '<span style="background:#EEF3F0;color:#3D5046;padding:2px 6px;border-radius:2px;font-weight:600;font-size:14px;">{content}</span>';
+const UNDERLINE_SPAN = '<span style="border-bottom:1.5px solid #B5C8BC;font-weight:500;">{content}</span>';
+const HIGHLIGHT_SPAN = '<span style="background:linear-gradient(180deg,transparent 60%,#D6E4DC 60%);font-weight:600;color:#2B2B2B;">{content}</span>';
+
+const QUOTE_CENTER = '<section style="margin:40px 16px;padding:36px 20px;border-top:1px solid #E8E8E8;border-bottom:1px solid #E8E8E8;text-align:center;">\n  <p style="font-family:\'Noto Serif SC\',Georgia,\'Times New Roman\',serif;font-size:17px;font-weight:600;color:#2B2B2B;margin:0;line-height:1.9;letter-spacing:0.8px;">\n    {content}\n  </p>\n</section>';
+const QUOTE_LEFT = '<section style="border-left:2px solid #4A5D52;padding:10px 20px 10px 20px;margin:0 16px 30px;background:#FFFFFF;">\n  <p style="font-size:14px;color:#525252;margin:0;line-height:1.9;text-align:justify;">\n    {content}\n  </p>\n</section>';
+
+const NOTE_TPL = '<section style="margin:0 16px 32px;padding:18px 20px;border-left:2px solid #4A5D52;">\n  <p style="font-size:10px;color:#4A5D52;font-weight:600;letter-spacing:2px;margin:0 0 8px;text-transform:uppercase;">\n    <span leaf="">{label}</span>\n  </p>\n  <p style="font-size:14px;color:#525252;margin:0;line-height:1.9;">\n    {content}\n  </p>\n</section>';
+
+const IMAGE_TPL = '<section style="margin:0 16px {img_mb};border:1px solid #E8E8E8;">\n  <section style="margin:0;overflow:hidden;">\n    <span leaf=""><img src="{url}" style="max-width:100%;height:auto;display:block;margin:0 auto;"></span>\n  </section>\n</section>{caption}';
+const IMAGE_CAPTION = '\n<p style="font-size:12px;color:#A3A3A3;text-align:center;margin:8px 16px 32px;letter-spacing:0.5px;">\n  <span leaf="">— {text}</span>\n</p>';
+const GIF_BADGE = '<span style="display:inline-block;border:1px solid #B5C8BC;color:#4A5D52;font-size:11px;font-weight:500;padding:2px 10px;border-radius:2px;margin-right:6px;letter-spacing:0.5px;"><span leaf="">GIF 动图</span></span>';
+
+const CONCLUSION_TPL = '<p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;font-weight:600;color:#2B2B2B;padding:0 16px;">{content}</p>';
+
+const POINT_LIST = '<section style="margin:0 16px 32px;border-top:1px solid #E8E8E8;">\n{rows}\n</section>';
+const POINT_ROW = '<section style="display:flex;align-items:baseline;padding:16px 0;border-bottom:1px solid #E8E8E8;">\n  <p style="font-size:11px;color:#4A5D52;font-weight:600;letter-spacing:1px;margin:0;min-width:28px;">{marker}</p>\n  <p style="font-size:14px;color:#2B2B2B;margin:0;line-height:1.7;padding-left:12px;">{text}</p>\n</section>';
+
+const END_BLOCK = '<section style="padding:0 16px;">\n  <section style="text-align:center;margin:48px 0 40px;">\n    <section style="display:flex;align-items:center;justify-content:center;">\n      <span style="height:1px;width:48px;background:#E8E8E8;margin-right:16px;"></span>\n      <span style="font-size:10px;color:#A3A3A3;letter-spacing:4px;font-weight:400;"><span leaf="">END</span></span>\n      <span style="height:1px;width:48px;background:#E8E8E8;margin-left:16px;"></span>\n    </section>\n  </section>\n</section>';
+
+const SIGNATURE_TPL = '<section style="padding:0 16px 40px;">\n  <p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;color:#525252;">\n    <span leaf="">我是 {author}，{bio}。</span>\n  </p>\n  <p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;color:#525252;">\n    <span leaf="">如果你觉得今天这篇有收获，欢迎</span><strong style="color:#4A5D52;"><span leaf="">点赞、在看、转发</span></strong><span leaf="">三连，我们下篇见。</span>\n  </p>\n</section>';
+
+const CODE_TPL = '<section style="margin:0 0 20px;border-radius:8px;overflow:hidden;background:#1E293B;box-shadow:0 4px 16px -8px rgba(15,23,42,0.4);">\n  <section style="display:flex;align-items:center;padding:9px 14px;background:#0F172A;">\n    <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#FF5F56;margin-right:7px;font-size:0;line-height:0;overflow:hidden;">.</span>\n    <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#FFBD2E;margin-right:7px;font-size:0;line-height:0;overflow:hidden;">.</span>\n    <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#27C93F;font-size:0;line-height:0;overflow:hidden;">.</span>\n    <span style="margin-left:12px;font-size:12px;color:#64748B;font-family:Consolas,Monaco,monospace;letter-spacing:1px;"><span leaf="">{lang}</span></span>\n  </section>\n  <section style="padding:11px 14px;">\n    {lines}\n  </section>\n</section>';
+const CODE_LINE = '<p style="margin:0;font-family:\'SF Mono\',Consolas,Monaco,monospace;font-size:13px;line-height:1.6;color:#E2E8F0;">{line}</p>';
+
+const CODE_INLINE = '<span style="background:#F1F5F9;color:#4A5D52;padding:1px 6px;border-radius:4px;font-family:\'SF Mono\',Consolas,Monaco,monospace;font-size:14px;">{content}</span>';
+
+const SUBTITLE_TPL = '<p style="margin:28px 0 14px;font-size:16px;font-weight:800;color:#2B2B2B;line-height:1.5;border-left:2px solid #4A5D52;padding-left:12px;"><span leaf="">{text}</span></p>';
+
+const PLACEHOLDER_TPL = '<section style="margin:0 0 24px;padding:30px 20px;border:1.5px dashed #DAD7D2;border-radius:14px;background:#FAFAF8;text-align:center;">\n  <p style="margin:0 0 10px;font-size:26px;line-height:1;"><span leaf="">🎬</span></p>\n  <p style="margin:0;font-size:14px;font-weight:700;color:#9CA3AF;letter-spacing:1px;"><span leaf="">待补素材</span></p>\n  <p style="margin:8px 0 0;font-size:13px;color:#B8B5B0;line-height:1.7;"><span leaf="">{text}</span></p>\n</section>';
+
+const TABLE_TPL = '<section style="margin:0 16px 32px;border:1px solid #E8E8E8;">\n{rows}\n</section>';
+const TABLE_HEADER_ROW = '<section style="display:flex;background:#EEF3F0;border-bottom:1px solid #E8E8E8;">\n{cells}\n</section>';
+const TABLE_BODY_ROW = '<section style="display:flex;border-bottom:1px solid #E8E8E8;">\n{cells}\n</section>';
+const TABLE_CELL = '<p style="flex:1;padding:10px 12px;font-size:13px;color:{color};margin:0;line-height:1.6;{bold}">{content}</p>';
+
+/* ---- 填充工具 ---- */
+function fill(tpl, kw){
+  let s = tpl;
+  for(const k in kw){ s = s.split('{'+k+'}').join(kw[k]); }
+  return s;
+}
+
+/* ---- 中文标点修正 ---- */
+const HALF = {',':'，',';':'；',':':'：','!':'！','?':'？'};
+function fixPunct(s){
+  s = s.replace(/([\u4e00-\u9fff\u3400-\u4dbf])\s*([,;:!?])/g, (m,c,p)=> c + HALF[p]);
+  s = s.replace(/([\u4e00-\u9fff\u3400-\u4dbf])\s*\./g, (m,c)=> c + '。');
+  s = s.replace(/([\u4e00-\u9fff\u3400-\u4dbf])"/g, (m,c)=> c + '“');
+  s = s.replace(/"([\u4e00-\u9fff\u3400-\u4dbf])/g, (m,c)=> '“' + c);
+  s = s.replace(/([\u4e00-\u9fff\u3400-\u4dbf])'/g, (m,c)=> c + '‘');
+  s = s.replace(/'([\u4e00-\u9fff\u3400-\u4dbf])/g, (m,c)=> '‘' + c);
+  return s;
+}
+function wrap(text){ return '<span leaf="">' + fixPunct(text) + '</span>'; }
+function wrapRaw(text){ return '<span leaf="">' + text + '</span>'; }
+
+/* ---- 行内渲染 ---- */
+const INLINE_RE = /\*\*(.+?)\*\*|==(.+?)==|<u>(.*?)<\/u>|~~(.+?)~~|`([^`]+)`/g;
+const KEYWORD_RE = /(?<=「)[^」\n]{1,20}(?=」)|(?<=“)[^”\n]{1,20}(?=”)|\d+(?:\.\d+)?\s*(?:亿|万|千|%|％|倍|步|个|年|月|天|篇|次|项|位|处)/g;
+const MAX_UNDERLINE = 3;
+
+function markKeywords(text, state){
+  let out = '', last = 0, count = 0;
+  KEYWORD_RE.lastIndex = 0;
+  let m;
+  while((m = KEYWORD_RE.exec(text)) !== null){
+    if(count >= MAX_UNDERLINE) break;
+    const kw = m[0].trim();
+    if(!kw || kw.length > 20) continue;
+    out += wrap(text.slice(last, m.index));
+    out += fill(UNDERLINE_SPAN, {content: wrap(kw)});
+    last = m.index + m[0].length;
+    count++;
+  }
+  out += wrap(text.slice(last));
+  return out;
+}
+
+function renderInline(text, state){
+  let out = '', pos = 0;
+  INLINE_RE.lastIndex = 0;
+  let m;
+  while((m = INLINE_RE.exec(text)) !== null){
+    if(m.index > pos) out += markKeywords(text.slice(pos, m.index), state);
+    if(m[1] !== undefined){            // **bold**
+      if(state.anchors < 5){ state.anchors++; out += fill(BOLD_ANCHOR, {content: wrap(m[1])}); }
+      else out += fill(BOLD_NORMAL, {content: wrap(m[1])});
+    } else if(m[2] !== undefined){     // ==label==
+      out += fill(LABEL_SPAN, {content: wrap(m[2])});
+    } else if(m[3] !== undefined){     // <u>underline</u>
+      out += fill(UNDERLINE_SPAN, {content: wrap(m[3])});
+    } else if(m[4] !== undefined){     // ~~highlight~~
+      out += fill(HIGHLIGHT_SPAN, {content: wrap(m[4])});
+    } else if(m[5] !== undefined){     // `code`
+      out += fill(CODE_INLINE, {content: wrapRaw(m[5])});
+    }
+    pos = m.index + m[0].length;
+  }
+  if(pos < text.length) out += markKeywords(text.slice(pos), state);
+  return out;
+}
+
+/* ---- 列表识别 ---- */
+const LIST_RE = /^((?:[-*+]\s+)|(?:\d+\.(?:\d+\.)?\s+)|(?:\d+\)\s+)|(?:\(\d+\)\s+)|(?:[A-Za-z][.)]\s+)|(?:[①-⑩]\s+)|(?:[一二三四五六七八九十]+[、.]\s+)|(?:步骤[一二三四五六七八九十]+[：:]?))(.*)$/;
+
+/* ---- 块解析 ---- */
+function parseBlocks(lines){
+  lines = lines.slice();
+  if(lines.length && lines[0].trim() === '---'){
+    let idx = 1;
+    while(idx < lines.length && lines[idx].trim() !== '---') idx++;
+    lines = lines.slice(idx + 1);
+  }
+  const blocks = []; let i = 0; const n = lines.length;
+  while(i < n){
+    const raw = lines[i].replace(/\n$/, '');
+    const s = raw.trim();
+    if(!s){ i++; continue; }
+    if(s.startsWith('```')){
+      const lang = s.slice(3).trim(); i++;
+      const code = [];
+      while(i < n && !lines[i].trimStart().startsWith('```')){ code.push(lines[i].replace(/\n$/, '')); i++; }
+      i++;
+      blocks.push({type:'code', lang, lines:code}); continue;
+    }
+    if(s.startsWith('### ')){ blocks.push({type:'subtitle', text:s.slice(4).trim()}); i++; continue; }
+    if(s.startsWith('## ')){ blocks.push({type:'chapter', text:s.slice(3).trim()}); i++; continue; }
+    if(s.startsWith('# ')){ blocks.push({type:'h1', text:s.slice(2).trim()}); i++; continue; }
+    if(s === '---' || s === '***' || s === '___'){ blocks.push({type:'divider'}); i++; continue; }
+    let mm = s.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
+    if(mm){
+      const url = mm[2].trim();
+      blocks.push({type:'image', url, alt:mm[1].trim(), gif:url.toLowerCase().endsWith('.gif')});
+      i++; continue;
+    }
+    if(s.startsWith('>') || s.startsWith('!>')){
+      const qlines = [];
+      while(i < n && (lines[i].trimStart().startsWith('>') || lines[i].trimStart().startsWith('!>'))){
+        let ql = lines[i].trimStart();
+        ql = ql.startsWith('>') ? ql.slice(1) : ql.slice(2);
+        qlines.push(ql.trim()); i++;
+      }
+      const joined = qlines.join('\n');
+      const first = qlines[0] || '';
+      const noteM = first.match(/^\[!(\w+)\]/);
+      if(noteM){
+        const body = qlines.length > 1 ? qlines.slice(1).join('\n') : joined;
+        blocks.push({type:'note', label:noteM[1].toUpperCase(), text:body});
+      } else if(s.startsWith('!>')){
+        blocks.push({type:'note', label:'NOTE', text:joined});
+      } else {
+        blocks.push({type:'quote', text:joined});
+      }
+      continue;
+    }
+    if(s.includes('【') && s.endsWith('】')){ blocks.push({type:'placeholder', text:s}); i++; continue; }
+    const lm = LIST_RE.exec(s);
+    if(lm){
+      const items = [];
+      while(i < n){
+        const sl = lines[i].replace(/\n$/, '').trim();
+        const mm2 = LIST_RE.exec(sl);
+        if(!mm2) break;
+        items.push({marker: mm2[1].trim(), text: mm2[2].trim()});
+        i++;
+      }
+      blocks.push({type:'list', items}); continue;
+    }
+    if(s.includes('|') && i + 1 < n && /^\s*\|?[\s:\-|]+\|?\s*$/.test(lines[i+1]) && lines[i+1].includes('-')){
+      const header = s.trim().replace(/^\||\|$/g, '').split('|').map(c=>c.trim());
+      i += 2; const rows = [];
+      while(i < n){
+        const tl = lines[i].replace(/\n$/, '').trim();
+        if(!tl || !tl.includes('|')) break;
+        rows.push(tl.replace(/^\||\|$/g, '').split('|').map(c=>c.trim()));
+        i++;
+      }
+      blocks.push({type:'table', headers:header, rows}); continue;
+    }
+    const para = [];
+    while(i < n){
+      const sl = lines[i].replace(/\n$/, '');
+      const s2 = sl.trim();
+      if(!s2 || s2.startsWith('#') || s2.startsWith('>') || s2.startsWith('!>')
+         || s2.startsWith('```') || s2.startsWith('![') || s2 === '---' || s2 === '***' || s2 === '___' || LIST_RE.test(s2)) break;
+      para.push(sl); i++;
+    }
+    blocks.push({type:'paragraph', text:para.join('\n')});
+  }
+  return blocks;
+}
+
+/* ---- 渲染 ---- */
+const EN_CHAPTER = {1:'ONE',2:'TWO',3:'THREE',4:'FOUR',5:'FIVE',6:'SIX',7:'SEVEN',8:'EIGHT',9:'NINE',10:'TEN',11:'ELEVEN',12:'TWELVE'};
+const POSTSCRIPT_KEYS = ['结语','总结','尾声','终章','收尾','后记'];
+function isPostscript(title){ return POSTSCRIPT_KEYS.some(k=>title.includes(k)); }
+
+function renderBlock(b, state){
+  const t = b.type;
+  if(t === 'h1') return '';
+  if(t === 'divider') return DIVIDER;
+  if(t === 'subtitle') return fill(SUBTITLE_TPL, {text: fixPunct(b.text)});
+  if(t === 'paragraph') return fill(PARA, {content: renderInline(b.text, state).replace(/\n/g, '<br>')});
+  if(t === 'quote'){
+    const inner = renderInline(b.text, state).replace(/\n/g, '<br>');
+    return (b.text.includes('\n') || b.text.length > 40) ? fill(QUOTE_LEFT, {content:inner}) : fill(QUOTE_CENTER, {content:inner});
+  }
+  if(t === 'note') return fill(NOTE_TPL, {label: fixPunct(b.label), content: renderInline(b.text, state).replace(/\n/g, '<br>')});
+  if(t === 'list'){
+    const rows = b.items.map(item=>{
+      let mk = item.marker;
+      if(/^\d+[.)]$/.test(mk)) mk = String(parseInt(mk)).padStart(2,'0');
+      else if(mk === '-' || mk === '*' || mk === '+') mk = '·';
+      const text = renderInline(item.text, state).replace(/\n/g, '<br>');
+      return fill(POINT_ROW, {marker: wrap(mk), text});
+    });
+    return fill(POINT_LIST, {rows: rows.join('\n')});
+  }
+  if(t === 'code'){
+    const lang = b.lang || 'code';
+    let linesHtml = b.lines.map(line=>{
+      const lh = line.replace(/^[ \t]+/, m=>{ let r=''; for(const ch of m[0]) r += (ch==='\t'?'　　　　':'　'); return r; });
+      return fill(CODE_LINE, {line: wrapRaw(lh)});
+    });
+    if(!linesHtml.length) linesHtml = [fill(CODE_LINE, {line:'<br>'})];
+    return fill(CODE_TPL, {lang, lines: linesHtml.join('\n')});
+  }
+  if(t === 'image'){
+    const img_mb = b.alt ? '8px' : '10px';
+    let caption = '';
+    if(b.alt){
+      if(b.gif) caption = '\n<p style="font-size:12px;color:#A3A3A3;text-align:center;margin:8px 16px 32px;letter-spacing:0.5px;">' + GIF_BADGE + '<span leaf="">' + fixPunct(b.alt) + '</span></p>';
+      else caption = fill(IMAGE_CAPTION, {text: fixPunct(b.alt)});
+    } else if(b.gif){
+      caption = '\n<p style="font-size:12px;color:#A3A3A3;text-align:center;margin:8px 16px 32px;letter-spacing:0.5px;">' + GIF_BADGE + '</p>';
+    }
+    return fill(IMAGE_TPL, {url: b.url, img_mb, caption});
+  }
+  if(t === 'placeholder') return fill(PLACEHOLDER_TPL, {text: fixPunct(b.text)});
+  if(t === 'table') return renderTable(b, state);
+  return '';
+}
+
+function renderTable(b, state){
+  const rows = [];
+  const headCells = b.headers.map(c=>fill(TABLE_CELL, {content: wrap(c), color:'#3D5046', bold:'font-weight:600;'})).join('');
+  rows.push(fill(TABLE_HEADER_ROW, {cells: headCells}));
+  b.rows.forEach(r=>{
+    const cells = r.map(c=>fill(TABLE_CELL, {content: renderInline(c, state), color:'#525252', bold:''})).join('');
+    rows.push(fill(TABLE_BODY_ROW, {cells}));
+  });
+  return fill(TABLE_TPL, {rows: rows.join('\n')});
+}
+
+function renderDocument(blocks, config){
+  const state = {anchors: 0};
+  let intro = null, pre = [], chapters = [], cur = null, seenChapter = false;
+  blocks.forEach(b=>{
+    if(b.type === 'chapter'){ seenChapter = true; cur = {title:b.text, blocks:[]}; chapters.push(cur); }
+    else if(!seenChapter){
+      if(b.type === 'quote' && intro === null) intro = b;
+      else pre.push(b);
+    } else { cur.blocks.push(b); }
+  });
+
+  const out = [CONTAINER_OPEN];
+  if(intro){
+    let lines = intro.text.split('\n');
+    let author = '';
+    if(lines.length && (lines[lines.length-1].startsWith('——') || lines[lines.length-1].startsWith('--'))){
+      author = lines[lines.length-1].replace(/^[-]+/, '').trim();
+      lines = lines.slice(0, -1);
+    }
+    const quote = renderInline(lines.join('\n'), state).replace(/\n/g, '<br>');
+    out.push(fill(INTRO_TPL, {quote, author: author ? wrap(author) : wrap('—— 作者名')}));
+  }
+  pre.forEach(b=>{ const r = renderBlock(b, state); if(r) out.push(r); });
+  if(chapters.length){
+    const toc = chapters.slice(0, 3);
+    const items = toc.map((c, idx)=>{
+      const border = idx === toc.length - 1 ? '' : 'border-right:1px solid #E8E8E8;margin-right:16px;';
+      return fill(TOC_ITEM, {border, num: fixPunct(String(idx+1).padStart(2,'0')), title: fixPunct(c.title)});
+    });
+    out.push(fill(TOC_TPL, {items: items.join('\n')}));
+  }
+  out.push(DIVIDER);
+  const total = chapters.length;
+  chapters.forEach((c, idx)=>{
+    let num_label;
+    if(idx === total - 1 && isPostscript(c.title)) num_label = '∞ · POSTSCRIPT';
+    else { const num = idx + 1; const en = EN_CHAPTER[num] || ('CHAPTER ' + num); num_label = String(num).padStart(2,'0') + ' · CHAPTER ' + en; }
+    out.push(fill(CHAPTER_TPL, {num_label: wrap(num_label), title: wrap(c.title)}));
+    c.blocks.forEach(b=>{ const r = renderBlock(b, state); if(r) out.push(r); });
+    if(idx < total - 1) out.push(DIVIDER);
+  });
+  out.push(END_BLOCK);
+  out.push(fill(SIGNATURE_TPL, {author: fixPunct(config.author), bio: fixPunct(config.bio)}));
+  out.push(CONTAINER_CLOSE);
+  return out.join('\n');
+}
+
+/* 对外入口 */
+function render(md, config){
+  const cfg = {
+    author: (config && config.author) || '{{作者名}}',
+    bio: (config && config.bio) || '{{简介}}'
+  };
+  return renderDocument(parseBlocks(md.split('\n')), cfg);
+}
+
+/* 仅供 node 测试导出（浏览器中 module 未定义） */
+if(typeof module !== 'undefined' && module.exports){
+  module.exports = { parseBlocks, renderDocument, render, fixPunct };
+}
+
+/* =========================================================================
+   界面交互（仅浏览器执行）
+   ========================================================================= */
+function initApp(){
+  const srcEl = document.getElementById('src');
+  const previewEl = document.getElementById('preview');
+  const authorEl = document.getElementById('author');
+  const bioEl = document.getElementById('bio');
+  const toastEl = document.getElementById('toast');
+  let timer = null;
+
+  function toast(msg){
+    toastEl.textContent = msg; toastEl.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(()=>toastEl.classList.remove('show'), 1800);
+  }
+  function generate(){
+    const html = render(srcEl.value, {author: authorEl.value, bio: bioEl.value});
+    previewEl.innerHTML = html;
+    return html;
+  }
+  function schedule(){ clearTimeout(timer); timer = setTimeout(generate, 250); }
+
+  srcEl.addEventListener('input', schedule);
+  authorEl.addEventListener('input', schedule);
+  bioEl.addEventListener('input', schedule);
+
+  document.getElementById('clear').addEventListener('click', ()=>{
+    srcEl.value = ''; generate(); srcEl.focus();
+  });
+  document.getElementById('sample').addEventListener('click', ()=>{
+    srcEl.value = SAMPLE_MD; generate();
+  });
+  document.getElementById('download').addEventListener('click', ()=>{
+    const html = generate();
+    const full = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"></head><body>' + html + '</body></html>';
+    const blob = new Blob([full], {type:'text/html'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = '留白禅意风排版.html'; a.click();
+    URL.revokeObjectURL(a.href); toast('已下载 HTML 文件');
+  });
+  document.getElementById('copy').addEventListener('click', ()=>{
+    const html = generate();
+    copyHtml(html, toast);
+  });
+
+  // 初始载入示例
+  srcEl.value = SAMPLE_MD; generate();
+}
+
+/* 复制内联样式 HTML 到剪贴板（兼容公众号粘贴） */
+function copyHtml(html, toast){
+  function fallback(){
+    const div = document.createElement('div');
+    div.contentEditable = 'true'; div.innerHTML = html;
+    div.style.position = 'fixed'; div.style.left = '-9999px';
+    document.body.appendChild(div);
+    const range = document.createRange(); range.selectNodeContents(div);
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    try { document.execCommand('copy'); toast('已复制，去公众号 Ctrl+V 粘贴'); }
+    catch(e){ toast('复制失败，请手动选择预览区复制'); }
+    document.body.removeChild(div);
+  }
+  try {
+    const htmlBlob = new Blob([html], {type:'text/html'});
+    const textBlob = new Blob([html], {type:'text/plain'});
+    if(navigator.clipboard && window.ClipboardItem){
+      navigator.clipboard.write([new window.ClipboardItem({'text/html': htmlBlob, 'text/plain': textBlob})])
+        .then(()=>toast('已复制，去公众号 Ctrl+V 粘贴'))
+        .catch(()=>fallback());
+    } else fallback();
+  } catch(e){ fallback(); }
+}
+
+const SAMPLE_MD = `# 留白，是一种高级的表达
+
+> 真正的设计不是把空间填满，而是知道什么时候停手。
+> —— 设计笔记
+
+做公众号排版这两年，我发现一个被忽视的真相：**读者的耐心比屏幕更窄**。
+
+当一屏全是密密麻麻的字，再好的内容也像一堵墙。于是我开始做减法。
+
+## 为什么要留白
+
+我们习惯了「信息密度 = 价值」。但「呼吸感」恰恰来自**敢于空着**。
+
+### 三个具体的做法
+
+1. 段落之间留出足够的空白
+2. 用「分隔线」代替小标题轰炸
+3. 「关键词」才下划线，不滥用
+
+> [!NOTE]
+> 留白不是偷懒，是把注意力还给读者。
+
+## 结语
+
+排版是手段，**表达**才是目的。愿你也能在内容里，留出一寸安静。
+
+我是阿白，一个研究公众号排版的设计者。如果你觉得今天这篇有收获，欢迎点赞、在看、转发三连，我们下篇见。`;
+
+if(typeof document !== 'undefined'){
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initApp);
+  else initApp();
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(){ /* iOS<16.4 忽略，仅影响离线缓存 */ });
+    });
+  }
+}
+</script>
+</body>
+</html>
