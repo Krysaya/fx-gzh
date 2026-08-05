@@ -468,7 +468,18 @@ function initApp(){
       previewEl.innerHTML = html;
       return html;
     } catch(e){
-      console.error('排版渲染出错:', e);
+      const v = srcEl.value;
+      console.error('=== 排版渲染出错 ===');
+      console.error('错误:', e.name, '-', e.message);
+      console.error('堆栈:', e.stack);
+      console.error('触发输入总长度:', v.length, '字符 / 行数:', v.split('\n').length);
+      console.error('触发输入前 500 字符:', JSON.stringify(v.slice(0, 500)));
+      console.error('触发输入末 200 字符:', JSON.stringify(v.slice(-200)));
+      if(v.length > 0 && v.length <= 5000){
+        console.error('触发输入完整内容:\n' + v);
+      } else if(v.length > 5000){
+        console.error('触发输入（前 5000）:\n' + v.slice(0, 5000));
+      }
       toast('渲染出错，详见控制台');
       return '';
     }
