@@ -475,6 +475,8 @@ function initApp(){
       console.error('触发输入总长度:', v.length, '字符 / 行数:', v.split('\n').length);
       console.error('触发输入前 500 字符:', JSON.stringify(v.slice(0, 500)));
       console.error('触发输入末 200 字符:', JSON.stringify(v.slice(-200)));
+      console.error('触发输入字符 codes (全):', [...v].map(c => c.charCodeAt(0).toString(16)).join(' '));
+      console.error('触发输入字符 codes (去重):', [...new Set(v)].map(c => 'U+' + c.charCodeAt(0).toString(16).padStart(4,'0')).join(' '));
       if(v.length > 0 && v.length <= 5000){
         console.error('触发输入完整内容:\n' + v);
       } else if(v.length > 5000){
