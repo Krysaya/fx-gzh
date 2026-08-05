@@ -112,14 +112,14 @@
 const CONTAINER_OPEN = '<section style="max-width:677px;margin:0 auto;background:#FFFFFF;font-family:-apple-system,BlinkMacSystemFont,\'PingFang SC\',\'Hiragino Sans GB\',\'Microsoft YaHei\',sans-serif;color:#525252;line-height:1.9;letter-spacing:0.3px;overflow-x:hidden;">';
 const CONTAINER_CLOSE = '</section>';
 
-const INTRO_TPL = '<section style="margin:32px 16px 48px;padding:40px 24px;border-top:1px solid #E8E8E8;border-bottom:1px solid #E8E8E8;text-align:center;">\n  <p style="font-family:\'Noto Serif SC\',Georgia,\'Times New Roman\',serif;font-size:19px;font-weight:600;color:#2B2B2B;margin:0 0 28px;line-height:1.85;letter-spacing:0.8px;">\n    {quote}\n  </p>\n  <p style="font-size:12px;color:#A3A3A3;margin:0;letter-spacing:1.5px;">\n    {author}\n  </p>\n</section>';
+const INTRO_TPL = '<section style="margin:32px 16px 32px;padding:40px 24px;border-top:1px solid #E8E8E8;border-bottom:1px solid #E8E8E8;text-align:center;">\n  <p style="font-family:\'Noto Serif SC\',Georgia,\'Times New Roman\',serif;font-size:19px;font-weight:600;color:#2B2B2B;margin:0 0 28px;line-height:1.85;letter-spacing:0.8px;">\n    {quote}\n  </p>\n  <p style="font-size:12px;color:#A3A3A3;margin:0;letter-spacing:1.5px;">\n    {author}\n  </p>\n</section>';
 
-const TOC_TPL = '<section style="padding:0 16px 48px;">\n  <p style="font-size:11px;color:#A3A3A3;margin:0 0 20px;letter-spacing:2px;text-transform:uppercase;"><span leaf="">本文脉络</span></p>\n  <section style="border-top:1px solid #E8E8E8;">\n    <section style="display:flex;">\n      {items}\n    </section>\n  </section>\n</section>';
+const TOC_TPL = '<section style="padding:0 16px 40px;">\n  <p style="font-size:11px;color:#A3A3A3;margin:0 0 20px;letter-spacing:2px;text-transform:uppercase;"><span leaf="">本文脉络</span></p>\n  <section style="border-top:1px solid #E8E8E8;">\n    <section style="display:flex;">\n      {items}\n    </section>\n  </section>\n</section>';
 const TOC_ITEM = '<section style="flex:1;padding:18px 12px 18px 0;border-bottom:1px solid #E8E8E8;{border}">\n  <p style="font-size:11px;color:#4A5D52;font-weight:600;margin:0 0 6px;letter-spacing:1px;"><span leaf="">{num}</span></p>\n  <p style="font-size:13px;color:#2B2B2B;margin:0;font-weight:500;line-height:1.5;"><span leaf="">{title}</span></p>\n</section>';
 
-const DIVIDER = '<section style="padding:0 16px;">\n  <section style="height:1px;background:#E8E8E8;margin:64px 0 0;">\n    <span leaf=""><br></span>\n  </section>\n</section>';
+const DIVIDER = '<section style="padding:0 16px;">\n  <section style="height:1px;background:#E8E8E8;margin:40px 0 0;">\n    <span leaf=""><br></span>\n  </section>\n</section>';
 
-const CHAPTER_TPL = '<section style="margin-top:64px;margin-bottom:32px;padding:0 16px;">\n  <p style="font-size:10px;color:#4A5D52;font-weight:600;letter-spacing:4px;margin:0 0 10px;text-transform:uppercase;">\n    {num_label}\n  </p>\n  <h3 style="font-family:\'Noto Serif SC\',Georgia,\'Times New Roman\',serif;font-size:22px;font-weight:700;color:#2B2B2B;margin:0 0 16px;letter-spacing:0.5px;line-height:1.4;">\n    {title}\n  </h3>\n  <section style="width:40px;height:2px;background:#4A5D52;">\n    <span leaf=""><br></span>\n  </section>\n</section>';
+const CHAPTER_TPL = '<section style="margin-top:40px;margin-bottom:24px;padding:0 16px;">\n  <p style="font-size:10px;color:#4A5D52;font-weight:600;letter-spacing:4px;margin:0 0 10px;text-transform:uppercase;">\n    {num_label}\n  </p>\n  <h3 style="font-family:\'Noto Serif SC\',Georgia,\'Times New Roman\',serif;font-size:22px;font-weight:700;color:#2B2B2B;margin:0 0 16px;letter-spacing:0.5px;line-height:1.4;">\n    {title}\n  </h3>\n  <section style="width:40px;height:2px;background:#4A5D52;">\n    <span leaf=""><br></span>\n  </section>\n</section>';
 
 const PARA = '<p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;color:#525252;padding:0 16px;">{content}</p>';
 
@@ -140,10 +140,10 @@ const GIF_BADGE = '<span style="display:inline-block;border:1px solid #B5C8BC;co
 
 const CONCLUSION_TPL = '<p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;font-weight:600;color:#2B2B2B;padding:0 16px;">{content}</p>';
 
-const POINT_LIST = '<section style="margin:0 16px 32px;">\n{rows}\n</section>';
-const POINT_ROW = '<section style="display:flex;align-items:baseline;padding:10px 0;">\n  <p style="font-size:11px;color:#4A5D52;font-weight:600;letter-spacing:1px;margin:0;min-width:28px;">{marker}</p>\n  <p style="font-size:14px;color:#2B2B2B;margin:0;line-height:1.7;padding-left:12px;">{text}</p>\n</section>';
+const POINT_LIST = '<section style="margin:0 16px 32px;border-top:1px solid #E8E8E8;">\n{rows}\n</section>';
+const POINT_ROW = '<section style="display:flex;align-items:baseline;padding:14px 0;{border}">\n  <p style="font-size:11px;color:#4A5D52;font-weight:600;letter-spacing:1px;margin:0;min-width:28px;">{marker}</p>\n  <p style="font-size:14px;color:#2B2B2B;margin:0;line-height:1.7;padding-left:12px;">{text}</p>\n</section>';
 
-const END_BLOCK = '<section style="padding:0 16px;">\n  <section style="text-align:center;margin:48px 0 40px;">\n    <section style="display:flex;align-items:center;justify-content:center;">\n      <span style="height:1px;width:48px;background:#E8E8E8;margin-right:16px;"></span>\n      <span style="font-size:10px;color:#A3A3A3;letter-spacing:4px;font-weight:400;"><span leaf="">END</span></span>\n      <span style="height:1px;width:48px;background:#E8E8E8;margin-left:16px;"></span>\n    </section>\n  </section>\n</section>';
+const END_BLOCK = '<section style="padding:0 16px;">\n  <section style="text-align:center;margin:32px 0 24px;">\n    <section style="display:flex;align-items:center;justify-content:center;">\n      <span style="height:1px;width:48px;background:#E8E8E8;margin-right:16px;"></span>\n      <span style="font-size:10px;color:#A3A3A3;letter-spacing:4px;font-weight:400;"><span leaf="">END</span></span>\n      <span style="height:1px;width:48px;background:#E8E8E8;margin-left:16px;"></span>\n    </section>\n  </section>\n</section>';
 
 const SIGNATURE_TPL = '<section style="padding:0 16px 40px;">\n  <p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;color:#525252;">\n    <span leaf="">我是 {author}，{bio}。</span>\n  </p>\n  <p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;color:#525252;">\n    <span leaf="">如果你觉得今天这篇有收获，欢迎</span><strong style="color:#4A5D52;"><span leaf="">点赞、在看、转发</span></strong><span leaf="">三连，我们下篇见。</span>\n  </p>\n</section>';
 
@@ -360,12 +360,13 @@ function renderBlock(b, state){
   }
   if(t === 'note') return fill(NOTE_TPL, {label: fixPunct(b.label), content: renderInline(b.text, state).replace(/\n/g, '<br>')});
   if(t === 'list'){
-    const rows = b.items.map(item=>{
+    const rows = b.items.map((item, idx)=>{
       let mk = item.marker;
       if(/^\d+[.)]$/.test(mk)) mk = String(parseInt(mk)).padStart(2,'0');
       else if(mk === '-' || mk === '*' || mk === '+') mk = '·';
       const text = renderInline(item.text, state).replace(/\n/g, '<br>');
-      return fill(POINT_ROW, {marker: wrap(mk), text});
+      const last = idx === b.items.length - 1;
+      return fill(POINT_ROW, {marker: wrap(mk), text, border: last ? '' : 'border-bottom:1px solid #E8E8E8;'});
     });
     return fill(POINT_LIST, {rows: rows.join('\n')});
   }
