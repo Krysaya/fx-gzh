@@ -11,6 +11,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon.svg">
 <title>留白禅意风 · 公众号排版</title>
+<script>window.__APP_VERSION__ = 'v3.0.0 (2026-08-05 修复缓存)';</script>
 <style>
   :root{
     --ink:#525252; --ink-strong:#2B2B2B; --green:#4A5D52;
@@ -80,7 +81,7 @@
 </head>
 <body>
 <header>
-  <span class="brand">留白禅意风<small>公众号一键排版</small></span>
+  <span class="brand">留白禅意风<small>公众号一键排版</small><em id="ver" style="font-style:normal;font-size:11px;color:#4A5D52;margin-left:8px;font-weight:400;"></em></span>
   <input class="author" id="author" placeholder="作者名" value="">
   <input class="bio" id="bio" placeholder="一句简介" value="">
   <button id="sample">载入示例</button>
@@ -500,6 +501,9 @@ function initApp(){
 
   // 初始载入示例
   srcEl.value = SAMPLE_MD; generate();
+  // 版本角标：一眼确认加载的是最新版（若与仓库不一致说明仍在旧缓存）
+  var verEl = document.getElementById('ver');
+  if(verEl && window.__APP_VERSION__) verEl.textContent = window.__APP_VERSION__;
 }
 
 /* 复制内联样式 HTML 到剪贴板（兼容公众号粘贴） */
@@ -560,6 +564,15 @@ if(typeof document !== 'undefined'){
   if('serviceWorker' in navigator){
     window.addEventListener('load', function(){
       navigator.serviceWorker.register('sw.js').catch(function(){ /* iOS<16.4 忽略，仅影响离线缓存 */ });
+      /* 新 SW 接管时自动刷新一次：配合 network-first 策略，
+         确保一次访问就从缓存锁定的旧版切换到最新版 */
+      if(navigator.serviceWorker.controller){
+        navigator.serviceWorker.addEventListener('controllerchange', function(){
+          if(window.__swRefreshing__) return;
+          window.__swRefreshing__ = true;
+          window.location.reload();
+        });
+      }
     });
   }
 }
