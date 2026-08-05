@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>留白禅意风 · skill 标准组件库完整示例（参考对照）</title>
+<style>
+  body{margin:0;background:#F7F8F7;font-family:-apple-system,'PingFang SC',sans-serif;}
+  .wrap{max-width:760px;margin:24px auto;background:#fff;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  h1{font-size:16px;color:#2B2B2B;border-bottom:2px solid #4A5D52;padding-bottom:12px;}
+  .note{font-size:13px;color:#888;line-height:1.8;background:#FAFAF8;border:1px dashed #E8E8E8;padding:12px 16px;border-radius:6px;margin:16px 0 32px;}
+  .note b{color:#4A5D52;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>skill 标准组件库 · 完整文章排版（参照物）</h1>
+<div class="note">这份是用 <b>references/theme-zen-whitespace.md</b> 的标准组件源码手动装配的完整示例：引言卡（组件2）→ 目录（组件3）→ 章节标题（组件5，<b>01 · CHAPTER ONE 英文小标签</b>）→ 正文下划线（组件7d）→ 要点列表（组件12，<b>细线分隔</b>）→ 提示块（组件9）→ 结语（∞ · POSTSCRIPT）→ END（组件14）→ 签名（组件15）。打开 App 用同一篇文章对比，就能看出 App 输出与标准版的差异。</div>
+
+<section style="max-width:677px;margin:0 auto;background:#FFFFFF;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:#525252;line-height:1.9;letter-spacing:0.3px;overflow-x:hidden;">
+
+  <!-- 组件2 开头引言卡片 -->
+  <section style="margin:32px 16px 48px;padding:40px 24px;border-top:1px solid #E8E8E8;border-bottom:1px solid #E8E8E8;text-align:center;">
+    <p style="font-family:'Noto Serif SC',Georgia,'Times New Roman',serif;font-size:19px;font-weight:600;color:#2B2B2B;margin:0 0 28px;line-height:1.85;letter-spacing:0.8px;">
+      <span leaf="">真正的设计不是把空间填满，而是知道什么时候停手。</span>
+    </p>
+    <p style="font-size:12px;color:#A3A3A3;margin:0;letter-spacing:1.5px;">
+      <span leaf="">—— 设计笔记</span>
+    </p>
+  </section>
+
+  <!-- 组件6 前言正文 -->
+  <p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;color:#525252;padding:0 16px;">
+    <span leaf="">做公众号排版这两年，我发现一个被忽视的真相：</span>
+    <span style="border-bottom:1.5px solid #B5C8BC;font-weight:500;"><span leaf="">读者的耐心比屏幕更窄</span></span>
+    <span leaf="">。当一屏全是密密麻麻的字，再好的内容也像一堵墙。</span>
+  </p>
+
+  <!-- 组件3 前言导读区域（极简目录） -->
+  <section style="padding:0 16px 48px;">
+    <p style="font-size:11px;color:#A3A3A3;margin:0 0 20px;letter-spacing:2px;text-transform:uppercase;">
+      <span leaf="">本文脉络</span>
+    </p>
+    <section style="border-top:1px solid #E8E8E8;">
+      <section style="display:flex;">
+        <section style="flex:1;padding:18px 12px 18px 0;border-bottom:1px solid #E8E8E8;border-right:1px solid #E8E8E8;margin-right:16px;">
+          <p style="font-size:11px;color:#4A5D52;font-weight:600;margin:0 0 6px;letter-spacing:1px;"><span leaf="">01</span></p>
+          <p style="font-size:13px;color:#2B2B2B;margin:0;font-weight:500;line-height:1.5;"><span leaf="">为什么要留白</span></p>
+        </section>
+        <section style="flex:1;padding:18px 12px 18px 0;border-bottom:1px solid #E8E8E8;border-right:1px solid #E8E8E8;margin-right:16px;">
+          <p style="font-size:11px;color:#4A5D52;font-weight:600;margin:0 0 6px;letter-spacing:1px;"><span leaf="">02</span></p>
+          <p style="font-size:13px;color:#2B2B2B;margin:0;font-weight:500;line-height:1.5;"><span leaf="">三个具体做法</span></p>
+        </section>
+        <section style="flex:1;padding:18px 0 18px 0;border-bottom:1px solid #E8E8E8;">
+          <p style="font-size:11px;color:#4A5D52;font-weight:600;margin:0 0 6px;letter-spacing:1px;"><span leaf="">03</span></p>
+          <p style="font-size:13px;color:#2B2B2B;margin:0;font-weight:500;line-height:1.5;"><span leaf="">结语</span></p>
+        </section>
+      </section>
+    </section>
+  </section>
+
+  <!-- 组件4 章节分割线 -->
+  <section style="padding:0 16px;">
+    <section style="height:1px;background:#E8E8E8;margin:64px 0 0;">
+      <span leaf=""><br></span>
+    </section>
+  </section>
+
+  <!-- 组件5 第一章标题 -->
+  <section style="margin-top:64px;margin-bottom:32px;padding:0 16px;">
+    <p style="font-size:10px;color:#4A5D52;font-weight:600;letter-spacing:4px;margin:0 0 10px;text-transform:uppercase;">
+      <span leaf="">01 · CHAPTER ONE</span>
+    </p>
+    <h3 style="font-family:'Noto Serif SC',Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#2B2B2B;margin:0 0 16px;letter-spacing:0.5px;line-height:1.4;">
+      <span leaf="">为什么要留白</span>
+    </h3>
+    <section style="width:40px;height:2px;background:#4A5D52;">
+      <span leaf=""><br></span>
+    </section>
+  </section>
+
+  <!-- 组件6 正文 -->
+  <p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;color:#525252;padding:0 16px;">
+    <span leaf="">我们习惯了</span>
+    <span style="border-bottom:1.5px solid #B5C8BC;font-weight:500;"><span leaf="">「信息密度 = 价值」</span></span>
+    <span leaf="">。但「呼吸感」恰恰来自</span>
+    <span style="border-bottom:1.5px solid #B5C8BC;font-weight:500;"><span leaf="">敢于空着</span></span>
+    <span leaf="">。</span>
+  </p>
+
+  <!-- 组件12 要点列表版（细线分隔） -->
+  <section style="margin:0 16px 32px;border-top:1px solid #E8E8E8;">
+    <section style="display:flex;align-items:baseline;padding:16px 0;border-bottom:1px solid #E8E8E8;">
+      <p style="font-size:11px;color:#4A5D52;font-weight:600;letter-spacing:1px;margin:0;min-width:28px;"><span leaf="">01</span></p>
+      <p style="font-size:14px;color:#2B2B2B;margin:0;line-height:1.7;padding-left:12px;"><span leaf="">段落之间留出足够的空白</span></p>
+    </section>
+    <section style="display:flex;align-items:baseline;padding:16px 0;border-bottom:1px solid #E8E8E8;">
+      <p style="font-size:11px;color:#4A5D52;font-weight:600;letter-spacing:1px;margin:0;min-width:28px;"><span leaf="">02</span></p>
+      <p style="font-size:14px;color:#2B2B2B;margin:0;line-height:1.7;padding-left:12px;"><span leaf="">用「分隔线」代替小标题轰炸</span></p>
+    </section>
+    <section style="display:flex;align-items:baseline;padding:16px 0;border-bottom:1px solid #E8E8E8;">
+      <p style="font-size:11px;color:#4A5D52;font-weight:600;letter-spacing:1px;margin:0;min-width:28px;"><span leaf="">03</span></p>
+      <p style="font-size:14px;color:#2B2B2B;margin:0;line-height:1.7;padding-left:12px;"><span leaf="">「关键词」才下划线，不滥用</span></p>
+    </section>
+  </section>
+
+  <!-- 组件9 提示块 -->
+  <section style="margin:0 16px 32px;padding:18px 20px;border-left:2px solid #4A5D52;">
+    <p style="font-size:10px;color:#4A5D52;font-weight:600;letter-spacing:2px;margin:0 0 8px;text-transform:uppercase;">
+      <span leaf="">NOTE</span>
+    </p>
+    <p style="font-size:14px;color:#525252;margin:0;line-height:1.9;">
+      <span leaf="">留白不是偷懒，是把注意力还给读者。</span>
+    </p>
+  </section>
+
+  <!-- 组件4 章节分割线 -->
+  <section style="padding:0 16px;">
+    <section style="height:1px;background:#E8E8E8;margin:64px 0 0;">
+      <span leaf=""><br></span>
+    </section>
+  </section>
+
+  <!-- 组件5 结语章节 -->
+  <section style="margin-top:64px;margin-bottom:32px;padding:0 16px;">
+    <p style="font-size:10px;color:#4A5D52;font-weight:600;letter-spacing:4px;margin:0 0 10px;text-transform:uppercase;">
+      <span leaf="">∞ · POSTSCRIPT</span>
+    </p>
+    <h3 style="font-family:'Noto Serif SC',Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:#2B2B2B;margin:0 0 16px;letter-spacing:0.5px;line-height:1.4;">
+      <span leaf="">结语</span>
+    </h3>
+    <section style="width:40px;height:2px;background:#4A5D52;">
+      <span leaf=""><br></span>
+    </section>
+  </section>
+
+  <!-- 组件11 加粗结论段 -->
+  <p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;font-weight:600;color:#2B2B2B;padding:0 16px;">
+    <span leaf="">排版是手段，</span>
+    <span style="border-bottom:1.5px solid #B5C8BC;font-weight:500;"><span leaf="">表达</span></span>
+    <span leaf="">才是目的。愿你也能在内容里，留出一寸安静。</span>
+  </p>
+
+  <!-- 组件14 END -->
+  <section style="padding:0 16px;">
+    <section style="text-align:center;margin:48px 0 40px;">
+      <section style="display:flex;align-items:center;justify-content:center;">
+        <span style="height:1px;width:48px;background:#E8E8E8;margin-right:16px;"></span>
+        <span style="font-size:10px;color:#A3A3A3;letter-spacing:4px;font-weight:400;"><span leaf="">END</span></span>
+        <span style="height:1px;width:48px;background:#E8E8E8;margin-left:16px;"></span>
+      </section>
+    </section>
+  </section>
+
+  <!-- 组件15 签名 -->
+  <section style="padding:0 16px 40px;">
+    <p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;color:#525252;">
+      <span leaf="">我是 {{作者名}}，{{一句话简介}}。</span>
+    </p>
+    <p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;color:#525252;">
+      <span leaf="">如果你觉得今天这篇有收获，欢迎</span>
+      <strong style="color:#4A5D52;"><span leaf="">点赞、在看、转发</span></strong>
+      <span leaf="">三连，我们下篇见。</span>
+    </p>
+  </section>
+
+</section>
+</div>
+</body>
+</html>

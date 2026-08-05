@@ -441,7 +441,11 @@ function renderDocument(blocks, config){
   chapters.forEach((c, idx)=>{
     let num_label;
     if(idx === total - 1 && isPostscript(c.title)) num_label = '∞ · POSTSCRIPT';
-    else { num_label = String(idx + 1).padStart(2,'0'); }
+    else {
+      /* skill 组件库标准：小号墨绿英文 + 编号，禅意风气质核心 */
+      const en = EN_CHAPTER[idx + 1] || ('CHAPTER ' + (idx + 1));
+      num_label = String(idx + 1).padStart(2,'0') + ' · CHAPTER ' + en;
+    }
     out.push(fill(CHAPTER_TPL, {num_label: wrap(num_label), title: wrap(c.title)}));
     c.blocks.forEach(b=>{ const r = renderBlock(b, state); if(r) out.push(r); });
     if(idx < total - 1) out.push(DIVIDER);
