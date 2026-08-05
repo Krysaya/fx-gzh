@@ -564,7 +564,10 @@ if(typeof document !== 'undefined'){
   else initApp();
   if('serviceWorker' in navigator){
     window.addEventListener('load', function(){
-      navigator.serviceWorker.register('sw.js').catch(function(){ /* iOS<16.4 忽略，仅影响离线缓存 */ });
+      navigator.serviceWorker.register('sw.js').then(
+        function(reg){ /* 注册成功，静默 */ },
+        function(err){ console.error('Service Worker 注册失败:', err.name, '-', err.message); }
+      ).catch(function(err){ console.error('Service Worker 异常:', err); });
       /* 新 SW 接管时自动刷新一次：配合 network-first 策略，
          确保一次访问就从缓存锁定的旧版切换到最新版 */
       if(navigator.serviceWorker.controller){
