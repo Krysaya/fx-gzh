@@ -182,7 +182,9 @@ function wrapRaw(text){ return '<span leaf="">' + text + '</span>'; }
 
 /* ---- 行内渲染 ---- */
 const INLINE_RE = /\*\*(.+?)\*\*|==(.+?)==|<u>(.*?)<\/u>|~~(.+?)~~|`([^`]+)`/g;
-const KEYWORD_RE = /(?<=「)[^」\n]{1,20}(?=」)|(?<=“)[^”\n]{1,20}(?=”)|\d+(?:\.\d+)?\s*(?:亿|万|千|%|％|倍|步|个|年|月|天|篇|次|项|位|处)/g;
+/* 关键词下划线：引号内术语、数字+量词。
+   注意：不能写后行断言，iOS Safari<16.4 不支持会导致整段脚本语法错误。 */
+const KEYWORD_RE = /「([^」\n]{1,20})」|“([^”\n]{1,20})”|(\d+(?:\.\d+)?\s*(?:亿|万|千|%|％|倍|步|个|年|月|天|篇|次|项|位|处))/g;
 const MAX_UNDERLINE = 3;
 
 function markKeywords(text, state){
@@ -191,9 +193,13 @@ function markKeywords(text, state){
   let m;
   while((m = KEYWORD_RE.exec(text)) !== null){
     if(count >= MAX_UNDERLINE) break;
-    const kw = m[0].trim();
+    let pre = '', post = '', kw;
+    if(m[1] !== undefined){ pre = '「'; kw = m[1]; post = '」'; }
+    else if(m[2] !== undefined){ pre = '“'; kw = m[2]; post = '”'; }
+    else { kw = m[3]; }
+    kw = kw.trim();
     if(!kw || kw.length > 20) continue;
-    out += wrap(text.slice(last, m.index));
+    out += wrap(text.slice(last, m.index) + pre);
     out += fill(UNDERLINE_SPAN, {content: wrap(kw)});
     last = m.index + m[0].length;
     count++;
@@ -455,15 +461,23 @@ function initApp(){
     clearTimeout(toast._t); toast._t = setTimeout(()=>toastEl.classList.remove('show'), 1800);
   }
   function generate(){
-    const html = render(srcEl.value, {author: authorEl.value, bio: bioEl.value});
-    previewEl.innerHTML = html;
-    return html;
+    try {
+      const html = render(srcEl.value, {author: authorEl.value, bio: bioEl.value});
+      previewEl.innerHTML = html;
+      return html;
+    } catch(e){
+      console.error('排版渲染出错:', e);
+      toast('渲染出错，详见控制台');
+      return '';
+    }
   }
   function schedule(){ clearTimeout(timer); timer = setTimeout(generate, 250); }
 
   srcEl.addEventListener('input', schedule);
   authorEl.addEventListener('input', schedule);
   bioEl.addEventListener('input', schedule);
+  /* 粘贴兜底：个别移动端浏览器粘贴后 input 触发不稳定 */
+  srcEl.addEventListener('paste', function(){ setTimeout(schedule, 0); });
 
   document.getElementById('clear').addEventListener('click', ()=>{
     srcEl.value = ''; generate(); srcEl.focus();
@@ -497,7 +511,7 @@ function copyHtml(html, toast){
     document.body.appendChild(div);
     const range = document.createRange(); range.selectNodeContents(div);
     const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
-    try { document.execCommand('copy'); toast('已复制，去公众号 Ctrl+V 粘贴'); }
+    try { document.execCommand('copy'); toast('已复制，去公众号助手粘贴即可'); }
     catch(e){ toast('复制失败，请手动选择预览区复制'); }
     document.body.removeChild(div);
   }
@@ -506,7 +520,7 @@ function copyHtml(html, toast){
     const textBlob = new Blob([html], {type:'text/plain'});
     if(navigator.clipboard && window.ClipboardItem){
       navigator.clipboard.write([new window.ClipboardItem({'text/html': htmlBlob, 'text/plain': textBlob})])
-        .then(()=>toast('已复制，去公众号 Ctrl+V 粘贴'))
+        .then(()=>toast('已复制，去公众号助手粘贴即可'))
         .catch(()=>fallback());
     } else fallback();
   } catch(e){ fallback(); }
