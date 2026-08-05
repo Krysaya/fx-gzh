@@ -469,23 +469,24 @@ if(typeof module !== 'undefined' && module.exports){
 /* =========================================================================
    界面交互（仅浏览器执行）
    ========================================================================= */
-function initApp(){
+  function initApp(){
   const srcEl = document.getElementById('src');
   const previewEl = document.getElementById('preview');
   const authorEl = document.getElementById('author');
   const bioEl = document.getElementById('bio');
   const toastEl = document.getElementById('toast');
   let timer = null;
+  let lastHtml = '';   // 缓存上次渲染结果：复制/下载不再重新渲染，避免大文章卡顿
 
   function toast(msg){
     toastEl.textContent = msg; toastEl.classList.add('show');
-    clearTimeout(toast._t); toast._t = setTimeout(()=>toastEl.classList.remove('show'), 1800);
+    clearTimeout(toast._t); toast._t = setTimeout(()=>toastEl.classList.remove('show'), 2000);
   }
   function generate(){
     try {
-      const html = render(srcEl.value, {author: authorEl.value, bio: bioEl.value});
-      previewEl.innerHTML = html;
-      return html;
+      lastHtml = render(srcEl.value, {author: authorEl.value, bio: bioEl.value});
+      previewEl.innerHTML = lastHtml;
+      return lastHtml;
     } catch(e){
       const v = srcEl.value;
       console.error('=== 排版渲染出错 ===');
@@ -495,11 +496,18 @@ function initApp(){
       console.error('[...v].length:', [...v].length);
       console.error('JSON.stringify(v):', JSON.stringify(v));
       console.error('触发输入字符 codes (逗号分隔, 适合截图):', [...v].map(c => c.charCodeAt(0).toString(16).padStart(4,'0')).join(','));
-      toast('渲染出错，已降级为纯文本');
-      return '';
+      /* 降级：不破坏原有预览，保留上一次成功的排版 */
+      if(!lastHtml){
+        previewEl.innerHTML = '<p style="padding:20px 16px;color:#999;">渲染失败（详见控制台），请检查输入内容。</p>';
+      }
+      toast('渲染出错，已保留上次结果');
+      return lastHtml;
     }
   }
-  function schedule(){ clearTimeout(timer); timer = setTimeout(generate, 250); }
+  function schedule(){
+    clearTimeout(timer);
+    timer = setTimeout(generate, 500);  // 防抖 500ms：粘贴/输入大文章时不频繁重渲染
+  }
 
   srcEl.addEventListener('input', schedule);
   authorEl.addEventListener('input', schedule);
@@ -508,13 +516,14 @@ function initApp(){
   srcEl.addEventListener('paste', function(){ setTimeout(schedule, 0); });
 
   document.getElementById('clear').addEventListener('click', ()=>{
-    srcEl.value = ''; generate(); srcEl.focus();
+    srcEl.value = ''; lastHtml = ''; generate(); srcEl.focus();
   });
   document.getElementById('sample').addEventListener('click', ()=>{
     srcEl.value = SAMPLE_MD; generate();
   });
   document.getElementById('download').addEventListener('click', ()=>{
-    const html = generate();
+    const html = lastHtml || generate();
+    if(!html){ toast('暂无可下载内容'); return; }
     const full = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"></head><body>' + html + '</body></html>';
     const blob = new Blob([full], {type:'text/html'});
     const a = document.createElement('a');
@@ -522,7 +531,8 @@ function initApp(){
     URL.revokeObjectURL(a.href); toast('已下载 HTML 文件');
   });
   document.getElementById('copy').addEventListener('click', ()=>{
-    const html = generate();
+    const html = lastHtml || generate();
+    if(!html){ toast('暂无可复制内容'); return; }
     copyHtml(html, toast);
   });
 
@@ -533,28 +543,63 @@ function initApp(){
   if(verEl && window.__APP_VERSION__) verEl.textContent = window.__APP_VERSION__;
 }
 
-/* 复制内联样式 HTML 到剪贴板（兼容公众号粘贴） */
+/* 复制内联样式 HTML 到剪贴板（兼容公众号粘贴）
+   策略：Clipboard API（现代）优先，失败立即同步回退 execCommand（仍在用户手势上下文内），
+   避免异步回调丢失手势导致 execCommand 被 Chrome 拒绝。 */
 function copyHtml(html, toast){
-  function fallback(){
-    const div = document.createElement('div');
-    div.contentEditable = 'true'; div.innerHTML = html;
-    div.style.position = 'fixed'; div.style.left = '-9999px';
+  // 同步回退：必须在用户点击手势上下文内调用 execCommand
+  function syncFallback(){
+    var div = document.createElement('div');
+    div.contentEditable = 'true';
+    div.innerHTML = html;
+    div.style.position = 'fixed';
+    div.style.left = '-9999px';
+    div.style.top = '0';
+    div.style.width = '1px';
+    div.style.height = '1px';
+    div.setAttribute('aria-hidden', 'true');
     document.body.appendChild(div);
-    const range = document.createRange(); range.selectNodeContents(div);
-    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
-    try { document.execCommand('copy'); toast('已复制，去公众号助手粘贴即可'); }
-    catch(e){ toast('复制失败，请手动选择预览区复制'); }
+    var ok = false;
+    try {
+      var range = document.createRange();
+      range.selectNodeContents(div);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      ok = document.execCommand('copy');
+      sel.removeAllRanges();
+    } catch(err){ ok = false; }
     document.body.removeChild(div);
+    if(ok) toast('已复制，去公众号助手粘贴即可');
+    else toast('复制失败，请手动选择预览区复制');
+    return ok;
   }
+
   try {
-    const htmlBlob = new Blob([html], {type:'text/html'});
-    const textBlob = new Blob([html], {type:'text/plain'});
     if(navigator.clipboard && window.ClipboardItem){
-      navigator.clipboard.write([new window.ClipboardItem({'text/html': htmlBlob, 'text/plain': textBlob})])
-        .then(()=>toast('已复制，去公众号助手粘贴即可'))
-        .catch(()=>fallback());
-    } else fallback();
-  } catch(e){ fallback(); }
+      // 纯文本版本（去 HTML 标签），粘贴到纯文本编辑器不出现乱码标签
+      var tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      var plainText = tmp.textContent || tmp.innerText || '';
+      var htmlBlob = new Blob([html], {type:'text/html'});
+      var textBlob = new Blob([plainText], {type:'text/plain'});
+      var done = false;
+      navigator.clipboard.write([new window.ClipboardItem({
+        'text/html': htmlBlob,
+        'text/plain': textBlob
+      })]).then(function(){
+        if(!done){ done = true; toast('已复制，去公众号助手粘贴即可'); }
+      }).catch(function(){
+        if(!done){ done = true; syncFallback(); }
+      });
+      // 老浏览器 write 返回 undefined 时同步兜底
+      setTimeout(function(){
+        if(!done){ done = true; syncFallback(); }
+      }, 1500);
+      return;
+    }
+  } catch(e){ /* 落到同步回退 */ }
+  syncFallback();
 }
 
 const SAMPLE_MD = `# 留白，是一种高级的表达
