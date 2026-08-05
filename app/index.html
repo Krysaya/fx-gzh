@@ -428,7 +428,7 @@ function renderDocument(blocks, config){
     out.push(fill(INTRO_TPL, {quote, author: author ? wrap(author) : wrap('—— 作者名')}));
   }
   pre.forEach(b=>{ const r = renderBlock(b, state); if(r) out.push(r); });
-  if(chapters.length){
+  if(chapters.length >= 2){
     const toc = chapters.slice(0, 3);
     const items = toc.map((c, idx)=>{
       const border = idx === toc.length - 1 ? '' : 'border-right:1px solid #E8E8E8;margin-right:16px;';
@@ -441,7 +441,7 @@ function renderDocument(blocks, config){
   chapters.forEach((c, idx)=>{
     let num_label;
     if(idx === total - 1 && isPostscript(c.title)) num_label = '∞ · POSTSCRIPT';
-    else { const num = idx + 1; const en = EN_CHAPTER[num] || ('CHAPTER ' + num); num_label = String(num).padStart(2,'0') + ' · CHAPTER ' + en; }
+    else { num_label = String(idx + 1).padStart(2,'0'); }
     out.push(fill(CHAPTER_TPL, {num_label: wrap(num_label), title: wrap(c.title)}));
     c.blocks.forEach(b=>{ const r = renderBlock(b, state); if(r) out.push(r); });
     if(idx < total - 1) out.push(DIVIDER);
