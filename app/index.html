@@ -239,6 +239,25 @@ const LIST_RE = /^((?:[-*+]\s+)|(?:\d+\.(?:\d+\.)?\s+)|(?:\d+\)\s+)|(?:\(\d+\)\s
 
 /* ---- 块解析 ---- */
 function parseBlocks(lines){
+  try {
+    return parseBlocksInner(lines);
+  } catch(err){
+    /* 防御性降级：任何意外解析错误（如 Chrome V8 对特殊 unicode 字符的 RangeError）
+       退化为按行拆分的纯文本段落 + 关键词下划线，保证用户能复制出草稿箱可用格式，
+       而不是彻底卡死看到一堆红字 */
+    console.warn('parseBlocks 降级为纯文本，原因:', err.name, err.message);
+    const out = [];
+    const txt = lines.join('\n').replace(/\n{3,}/g, '\n\n');
+    const paragraphs = txt.split(/\n{2,}/).filter(Boolean);
+    for(const p of paragraphs){
+      const safe = p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      out.push({type:'paragraph', text: safe});
+    }
+    return out;
+  }
+}
+
+function parseBlocksInner(lines){
   lines = lines.slice();
   if(lines.length && lines[0].trim() === '---'){
     let idx = 1;
@@ -472,17 +491,11 @@ function initApp(){
       console.error('=== 排版渲染出错 ===');
       console.error('错误:', e.name, '-', e.message);
       console.error('堆栈:', e.stack);
-      console.error('触发输入总长度:', v.length, '字符 / 行数:', v.split('\n').length);
-      console.error('触发输入前 500 字符:', JSON.stringify(v.slice(0, 500)));
-      console.error('触发输入末 200 字符:', JSON.stringify(v.slice(-200)));
-      console.error('触发输入字符 codes (全):', [...v].map(c => c.charCodeAt(0).toString(16)).join(' '));
-      console.error('触发输入字符 codes (去重):', [...new Set(v)].map(c => 'U+' + c.charCodeAt(0).toString(16).padStart(4,'0')).join(' '));
-      if(v.length > 0 && v.length <= 5000){
-        console.error('触发输入完整内容:\n' + v);
-      } else if(v.length > 5000){
-        console.error('触发输入（前 5000）:\n' + v.slice(0, 5000));
-      }
-      toast('渲染出错，详见控制台');
+      console.error('v.length:', v.length);
+      console.error('[...v].length:', [...v].length);
+      console.error('JSON.stringify(v):', JSON.stringify(v));
+      console.error('触发输入字符 codes (逗号分隔, 适合截图):', [...v].map(c => c.charCodeAt(0).toString(16).padStart(4,'0')).join(','));
+      toast('渲染出错，已降级为纯文本');
       return '';
     }
   }
