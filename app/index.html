@@ -466,6 +466,57 @@ function renderDocument(blocks, config){
   return out.join('\n');
 }
 
+/* ---- 智能排版：纯文本 → 结构识别 ---- */
+/* 检测输入是否已含 markdown 语法（#、**、>、```、![、| 表格、- 列表、1. 列表） */
+function hasMarkdownSyntax(md){
+  return /(^|\n)\s*#{1,6}\s/.test(md)        /* 标题 */
+      || /\*\*/.test(md)                     /* 加粗 */
+      || /(^|\n)\s*>\s/.test(md)             /* 引用 */
+      || /(^|\n)\s*```/.test(md)             /* 代码块 */
+      || /!\[/.test(md)                      /* 图片 */
+      || /(^|\n)\s*\|/.test(md)              /* 表格 */
+      || /(^|\n)\s*[-+*]\s+/.test(md);       /* 无序列表 */
+}
+
+/* 纯文本智能结构识别：
+   1) 序号开头（1. / 一、 / ① / - / •）→ 列表
+   2) 短行（≤28 字、不以句末标点结尾、非纯数字）→ 小标题（###）
+   3) 其余 → 原样段落
+   只作用于渲染层，textarea 原文不变。 */
+function smartStructure(md){
+  const lines = md.split('\n');
+  const out = [];
+  let i = 0;
+  const listRe = /^\s*(?:[-•·*]\s+|\d+[.、)]\s+|[①-⑩]\s+|[一二三四五六七八九十]+[、.]\s+)/;
+  const endPunct = /[。，！？；：、…—""''（）《》]$/;
+  while(i < lines.length){
+    const line = lines[i];
+    const s = line.trim();
+    if(!s){ out.push(line); i++; continue; }
+    /* 列表：连续收集 */
+    if(listRe.test(s)){
+      const items = [];
+      while(i < lines.length){
+        const sl = lines[i].trim();
+        if(!sl || !listRe.test(sl)) break;
+        items.push(lines[i]);
+        i++;
+      }
+      out.push(items.join('\n'));
+      continue;
+    }
+    /* 短行标题 */
+    if(s.length <= 28 && !endPunct.test(s) && !/^[\d.、()（）\s]+$/.test(s)){
+      out.push('### ' + s);
+      i++;
+      continue;
+    }
+    out.push(line);
+    i++;
+  }
+  return out.join('\n');
+}
+
 /* 对外入口 */
 function render(md, config){
   const cfg = {
@@ -477,7 +528,9 @@ function render(md, config){
   const sanitized = md
     .replace(/[\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g, '')
     .replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '');
-  return renderDocument(parseBlocks(sanitized.split('\n')), cfg);
+  /* 智能排版：输入为纯文本（无 markdown 标记）时，自动识别标题/列表结构 */
+  const structured = hasMarkdownSyntax(sanitized) ? sanitized : smartStructure(sanitized);
+  return renderDocument(parseBlocks(structured.split('\n')), cfg);
 }
 
 /* 仅供 node 测试导出（浏览器中 module 未定义） */
