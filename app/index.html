@@ -99,7 +99,7 @@
   <button id="download">下载 HTML</button>
   <button class="primary" id="copy">复制全部</button>
 </header>
-<input type="file" id="fileInput" accept=".md,.markdown,.txt,text/markdown,text/plain" style="display:none;">
+<input type="file" id="fileInput" accept="*" style="display:none;">
 <main>
   <section class="pane">
     <div class="label">在此粘贴 Markdown 原文</div>
@@ -563,7 +563,11 @@ if(typeof module !== 'undefined' && module.exports){
 
   function handleFile(file){
     if(!file) return;
-    if(!/\.(md|markdown|txt)$/i.test(file.name) && file.type && !/text\/(markdown|plain)/.test(file.type)){
+    /* 放宽校验：手机上 .md 的 file.type 常为空或 application/octet-stream，
+       不能因此误拒绝。按文件名后缀 + MIME 双通道判断。 */
+    const isMdName = /\.(md|markdown|txt)$/i.test(file.name);
+    const isTextType = !file.type || /^text\//.test(file.type) || file.type === 'application/octet-stream';
+    if(!isMdName && !isTextType){
       toast('仅支持 .md / .markdown / .txt 文件');
       return;
     }
