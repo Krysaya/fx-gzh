@@ -72,6 +72,14 @@
     transition:opacity .25s; z-index:50;
   }
   .toast.show{opacity:1;}
+  /* 拖拽导入高亮 */
+  body.dragging::after{
+    content:'松开鼠标导入 Markdown 文件';
+    position:fixed; inset:0; z-index:60;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(74,93,82,.92); color:#fff;
+    font-size:18px; letter-spacing:2px; font-weight:600;
+  }
   @media(max-width:760px){
     main{flex-direction:column; height:auto;}
     .pane + .pane{border-left:none; border-top:1px solid var(--line);}
@@ -85,11 +93,13 @@
   <span class="brand">留白禅意风<small>公众号一键排版</small><em id="ver" style="font-style:normal;font-size:11px;color:#4A5D52;margin-left:8px;font-weight:400;"></em></span>
   <input class="author" id="author" placeholder="作者名" value="">
   <input class="bio" id="bio" placeholder="一句简介" value="">
+  <button id="import">导入 md</button>
   <button id="sample">载入示例</button>
   <button id="clear">清空</button>
   <button id="download">下载 HTML</button>
   <button class="primary" id="copy">复制全部</button>
 </header>
+<input type="file" id="fileInput" accept=".md,.markdown,.txt,text/markdown,text/plain" style="display:none;">
 <main>
   <section class="pane">
     <div class="label">在此粘贴 Markdown 原文</div>
@@ -545,6 +555,63 @@ if(typeof module !== 'undefined' && module.exports){
     const html = lastHtml || generate();
     if(!html){ toast('暂无可复制内容'); return; }
     copyHtml(html, toast);
+  });
+
+  /* ---- 导入 md 文档 ---- */
+  const fileInput = document.getElementById('fileInput');
+  const importBtn = document.getElementById('import');
+
+  function handleFile(file){
+    if(!file) return;
+    if(!/\.(md|markdown|txt)$/i.test(file.name) && file.type && !/text\/(markdown|plain)/.test(file.type)){
+      toast('仅支持 .md / .markdown / .txt 文件');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(){
+      const content = String(reader.result || '');
+      if(content.length > 500000){
+        toast('文件过大（>500KB），请精简后再导入');
+        return;
+      }
+      srcEl.value = content;
+      generate();
+      toast('已导入「' + file.name + '」');
+      srcEl.focus();
+    };
+    reader.onerror = function(){ toast('读取文件失败，请重试'); };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  importBtn.addEventListener('click', function(){ fileInput.click(); });
+  fileInput.addEventListener('change', function(){
+    handleFile(fileInput.files && fileInput.files[0]);
+    fileInput.value = '';  // 允许重复导入同一文件
+  });
+
+  /* 拖拽导入：拖文件到窗口任意位置 */
+  let dragDepth = 0;
+  document.addEventListener('dragenter', function(e){
+    e.preventDefault();
+    if(e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types, 'Files') >= 0){
+      dragDepth++;
+      document.body.classList.add('dragging');
+    }
+  });
+  document.addEventListener('dragover', function(e){ e.preventDefault(); });
+  document.addEventListener('dragleave', function(e){
+    e.preventDefault();
+    if(dragDepth > 0){
+      dragDepth--;
+      if(dragDepth === 0) document.body.classList.remove('dragging');
+    }
+  });
+  document.addEventListener('drop', function(e){
+    e.preventDefault();
+    dragDepth = 0;
+    document.body.classList.remove('dragging');
+    const files = e.dataTransfer && e.dataTransfer.files;
+    if(files && files.length) handleFile(files[0]);
   });
 
   // 初始载入示例
